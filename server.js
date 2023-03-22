@@ -2,11 +2,53 @@ const { json } = require('express');
 const express = require('express');
 const res = require("express/lib/response");
 const bodyParser = require('body-parser');
+
+const passport = require('passport');
+const passportJWT = require('passport-jwt');
+const JwtStrategy = passportJWT.Strategy;
+const ExtractJwt = passportJWT.ExtractJwt;
+const fs = require('fs');
+const usersFile = fs.readFileSync('./users.json', 'utf8');
+const users = JSON.parse(usersFile);
+
+
+// Extract token from header
+const jwtOptions = {
+    jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+    secretOrKey:'mykey'
+};
+
+const strategy = new JwtStrategy(jwtOptions, (jwt_paylaod, next) => {
+    const user = users.find(user => user.id === jwt_paylaod.id);
+    if(user) {
+        next(null, user);
+    }   else {
+        next(null, false);
+    }
+    
+});
+
+passport.use(strategy);
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
+
+app.post('/login', (req, res) => {
+    const {username, passowrd: password} = req.body;
+    const user = users.find(user => user.username === username &&
+        user.password === password);
+
+    if(user) {
+        const payload = {id: user.id};
+        const token = jwt.sign(payload, jwt.secretOrKey);
+        res.status(200).json({message:'OK', token: token});
+    } else {
+        res.status(401).json({message:'Invalid username or password'});
+    }
+});
 
 // Addidtion. add /add/x/x values together.
 app.get('/add/:num1/:num2', (req, res) =>{
@@ -23,7 +65,7 @@ app.get('/add/:num1/:num2', (req, res) =>{
     }
 });
 
-app.post('/add', (req, res) => {
+app.post('/add', passport.authenticate('jwt', { session: false }), (req, res) => {
     try{
         const {n1, n2} = req.body;
         const num1 = parseFloat(n1);
@@ -38,7 +80,7 @@ app.post('/add', (req, res) => {
 
         const result = num1 + num2;
 
-        res.status(200).json({statuscode:500, data:result});
+        res.status(200).json({statuscode:200, data:result});
         
         
     }
@@ -78,7 +120,7 @@ app.post('/subtract', (req, res) => {
 
         const result = num1 - num2;
 
-        res.status(200).json({statuscode:500, data:result});
+        res.status(200).json({statuscode:200, data:result});
         
         
     }
@@ -120,7 +162,7 @@ app.post('/multiply', (req, res) => {
 
         const result = num1 * num2;
 
-        res.status(200).json({statuscode:500, data:result});
+        res.status(200).json({statuscode:200, data:result});
         
         
     }
@@ -164,7 +206,7 @@ app.post('/divide', (req, res) => {
 
         const result = num1 / num2;
 
-        res.status(200).json({statuscode:500, data:result});
+        res.status(200).json({statuscode:200, data:result});
         
         
     }
