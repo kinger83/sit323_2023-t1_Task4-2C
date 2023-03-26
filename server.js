@@ -5,11 +5,22 @@ const bodyParser = require('body-parser');
 
 const passport = require('passport');
 const passportJWT = require('passport-jwt');
+const jwt = require('jsonwebtoken');
 const JwtStrategy = passportJWT.Strategy;
 const ExtractJwt = passportJWT.ExtractJwt;
 const fs = require('fs');
 const usersFile = fs.readFileSync('./users.json', 'utf8');
 const users = JSON.parse(usersFile);
+console.log(users);
+var token = null;
+
+
+
+const app = express();
+app.use(express.json());
+app.use(express.urlencoded());
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.json());
 
 
 // Extract token from header
@@ -17,6 +28,17 @@ const jwtOptions = {
     jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
     secretOrKey:'mykey'
 };
+
+// Add token if not nll to header
+const addTokenToHeader = (req, res, next) => {
+    //const token = req.token;
+    
+    if (token) {
+      req.headers.authorization = `Bearer ${token}`;
+      console.log("adding token " + token);
+    }
+    next();
+  };
 
 const strategy = new JwtStrategy(jwtOptions, (jwt_paylaod, next) => {
     const user = users.find(user => user.id === jwt_paylaod.id);
@@ -27,23 +49,20 @@ const strategy = new JwtStrategy(jwtOptions, (jwt_paylaod, next) => {
     }
     
 });
-
 passport.use(strategy);
 
-const app = express();
-app.use(express.json());
-app.use(express.urlencoded());
-app.use(bodyParser.urlencoded({extended: true}));
-app.use(bodyParser.json());
+
 
 app.post('/login', (req, res) => {
     const {username, passowrd: password} = req.body;
     const user = users.find(user => user.username === username &&
         user.password === password);
-
+    
     if(user) {
         const payload = {id: user.id};
-        const token = jwt.sign(payload, jwt.secretOrKey);
+        token = jwt.sign(payload, jwtOptions.secretOrKey);
+        req.token = token;
+        console.log(token);
         res.status(200).json({message:'OK', token: token});
     } else {
         res.status(401).json({message:'Invalid username or password'});
@@ -65,7 +84,7 @@ app.get('/add/:num1/:num2', (req, res) =>{
     }
 });
 
-app.post('/add', passport.authenticate('jwt', { session: false }), (req, res) => {
+app.post('/add', addTokenToHeader, passport.authenticate('jwt', { session: false }), (req, res) => {
     try{
         const {n1, n2} = req.body;
         const num1 = parseFloat(n1);
@@ -105,7 +124,7 @@ app.get('/subtract/:num1/:num2', (req, res) =>{
     }
 });
 
-app.post('/subtract', (req, res) => {
+app.post('/subtract', addTokenToHeader, passport.authenticate('jwt', { session: false }), (req, res) => {
     try{
         const {n1, n2} = req.body;
         const num1 = parseFloat(n1);
@@ -147,7 +166,7 @@ app.get('/multiply/:num1/:num2', (req, res) =>{
     }
 });
 
-app.post('/multiply', (req, res) => {
+app.post('/multiply', addTokenToHeader, passport.authenticate('jwt', { session: false }), (req, res) => {
     try{
         const {n1, n2} = req.body;
         const num1 = parseFloat(n1);
@@ -187,7 +206,7 @@ app.get('/divide/:num1/:num2', (req, res) =>{
     }
 });
 
-app.post('/divide', (req, res) => {
+app.post('/divide', addTokenToHeader, passport.authenticate('jwt', { session: false }), (req, res) => {
     try{
         const {n1, n2} = req.body;
         const num1 = parseFloat(n1);
