@@ -31,7 +31,7 @@ const jwtOptions = {
     secretOrKey:'mykey'
 };
 
-// Add token if not nll to header
+// Add token if not null to header
 const addTokenToHeader = (req, res, next) => {
     //const token = req.token;
     
