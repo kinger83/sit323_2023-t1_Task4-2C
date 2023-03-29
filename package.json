@@ -5,7 +5,7 @@
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.1"
   },
-  "name": "sit323_2023-t1_task4-2C",
+  "name": "kingerit/calculator",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {

@@ -22,6 +22,8 @@ app.use(express.urlencoded());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 
+const HOST = '0.0.0.0';
+const PORT = 8080;
 
 // Extract token from header
 const jwtOptions = {
@@ -235,6 +237,6 @@ app.post('/divide', addTokenToHeader, passport.authenticate('jwt', { session: fa
 
 });
 
-app.listen(3000, () => {
-    console.log('Calculator API is listenning on port 3000. Enjoy');
+app.listen(PORT, HOST, () => {
+    console.log("Calculator API is listenning on http://${HOST}:${PORT} Enjoy");
 });
